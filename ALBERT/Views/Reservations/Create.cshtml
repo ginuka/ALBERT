@@ -1,0 +1,65 @@
+﻿@model ALBERT.ViewModels.CreateReservationDto
+
+@{
+    ViewData["Title"] = "Create Reservation";
+}
+
+<h2>Create Reservation</h2>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label>Search Customer:</label>
+        <input type="text" id="customerSearch" class="form-control" placeholder="Enter name, phone, or email" />
+        <ul id="customerResults" class="list-group"></ul>
+        <input type="hidden" id="CustomerId" name="CustomerId" />
+    </div>
+
+    <div class="form-group">
+        <label>Table</label>
+        <select asp-for="TableId" class="form-control" required>
+            <option value="">Select Table</option>
+            @foreach (var table in ViewBag.Tables)
+            {
+                <option value="@table.Id">Table @table.TableNumber (Capacity: @table.Capacity)</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Reservation Time</label>
+        <input asp-for="ReservationTime" type="datetime-local" class="form-control" required />
+    </div>
+
+    <button type="submit" class="btn btn-success">Create</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $("#customerSearch").on("keyup", function() {
+            var query = $(this).val();
+            if (query.length > 2) {
+                $.getJSON("/Reservations/SearchCustomer", { query: query }, function(data) {
+                    $("#customerResults").empty();
+                    $.each(data, function(index, customer) {
+                        $("#customerResults").append(
+                            `<li class="list-group-item customer-item" data-id="${customer.id}">${customer.name} (${customer.phone})</li>`
+                        );
+                    });
+                });
+            } else {
+                $("#customerResults").empty();
+            }
+        });
+
+        $(document).on("click", ".customer-item", function() {
+            var id = $(this).data("id");
+            var name = $(this).text();
+            $("#customerSearch").val(name);
+            $("#CustomerId").val(id);
+            $("#customerResults").empty();
+        });
+    });
+</script>

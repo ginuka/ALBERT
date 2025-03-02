@@ -1,0 +1,19 @@
+﻿@using ALBERT.ViewModels
+@model MenuDto
+
+@{
+    ViewData["Title"] = "Edit Menu";
+}
+
+<h2>Edit Menu</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label class="form-label">Menu Name</label>
+        <input asp-for="Name" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Update</button>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</form>

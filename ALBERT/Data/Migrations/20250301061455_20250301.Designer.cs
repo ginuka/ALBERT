@@ -4,6 +4,7 @@ using ALBERT.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ALBERT.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250301061455_20250301")]
+    partial class _20250301
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -55,6 +58,11 @@ namespace ALBERT.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
                     b.Property<DateTime>("HireDate")
                         .HasColumnType("datetime2");
 
@@ -75,6 +83,10 @@ namespace ALBERT.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Employees");
+
+                    b.HasDiscriminator().HasValue("Employee");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("ALBERT.Models.Menu", b =>
@@ -110,15 +122,21 @@ namespace ALBERT.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("MenuId")
+                    b.Property<int?>("MenuId")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<TimeSpan>("PreparationTime")
+                        .HasColumnType("time");
+
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("StockQuantity")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -134,6 +152,9 @@ namespace ALBERT.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ChefId")
+                        .HasColumnType("int");
 
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
@@ -154,6 +175,8 @@ namespace ALBERT.Data.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ChefId");
 
                     b.HasIndex("CustomerId");
 
@@ -270,7 +293,12 @@ namespace ALBERT.Data.Migrations
                     b.Property<int>("TableNumber")
                         .HasColumnType("int");
 
+                    b.Property<int?>("WaiterId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("WaiterId");
 
                     b.ToTable("Tables");
                 });
@@ -477,19 +505,37 @@ namespace ALBERT.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ALBERT.Models.Chef", b =>
+                {
+                    b.HasBaseType("ALBERT.Models.Employee");
+
+                    b.Property<string>("Specialization")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasDiscriminator().HasValue("Chef");
+                });
+
+            modelBuilder.Entity("ALBERT.Models.Waiter", b =>
+                {
+                    b.HasBaseType("ALBERT.Models.Employee");
+
+                    b.HasDiscriminator().HasValue("Waiter");
+                });
+
             modelBuilder.Entity("ALBERT.Models.MenuItem", b =>
                 {
-                    b.HasOne("ALBERT.Models.Menu", "Menu")
+                    b.HasOne("ALBERT.Models.Menu", null)
                         .WithMany("Items")
-                        .HasForeignKey("MenuId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Menu");
+                        .HasForeignKey("MenuId");
                 });
 
             modelBuilder.Entity("ALBERT.Models.Order", b =>
                 {
+                    b.HasOne("ALBERT.Models.Chef", null)
+                        .WithMany("AssignedOrders")
+                        .HasForeignKey("ChefId");
+
                     b.HasOne("ALBERT.Models.Customer", "Customer")
                         .WithMany("Orders")
                         .HasForeignKey("CustomerId")
@@ -502,8 +548,8 @@ namespace ALBERT.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ALBERT.Models.Employee", "Waiter")
-                        .WithMany()
+                    b.HasOne("ALBERT.Models.Waiter", "Waiter")
+                        .WithMany("CurrentOrders")
                         .HasForeignKey("WaiterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -562,6 +608,13 @@ namespace ALBERT.Data.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Table");
+                });
+
+            modelBuilder.Entity("ALBERT.Models.Table", b =>
+                {
+                    b.HasOne("ALBERT.Models.Waiter", null)
+                        .WithMany("AssignedTables")
+                        .HasForeignKey("WaiterId");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -628,6 +681,18 @@ namespace ALBERT.Data.Migrations
             modelBuilder.Entity("ALBERT.Models.Order", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("ALBERT.Models.Chef", b =>
+                {
+                    b.Navigation("AssignedOrders");
+                });
+
+            modelBuilder.Entity("ALBERT.Models.Waiter", b =>
+                {
+                    b.Navigation("AssignedTables");
+
+                    b.Navigation("CurrentOrders");
                 });
 #pragma warning restore 612, 618
         }

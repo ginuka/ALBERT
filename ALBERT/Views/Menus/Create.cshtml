@@ -1,0 +1,17 @@
+﻿@using ALBERT.ViewModels
+@model CreateMenuDto
+
+@{
+    ViewData["Title"] = "Create Menu";
+}
+
+<h2>Create Menu</h2>
+
+<form asp-action="Create" method="post">
+    <div class="mb-3">
+        <label class="form-label">Menu Name</label>
+        <input asp-for="Name" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-success">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</form>

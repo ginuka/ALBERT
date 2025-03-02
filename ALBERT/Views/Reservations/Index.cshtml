@@ -1,0 +1,39 @@
+﻿@model List<ALBERT.Models.Reservation>
+
+@{
+    ViewData["Title"] = "Reservations";
+}
+
+<h2>Reservations</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New Reservation</a>
+</p>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Customer</th>
+            <th>Table Number</th>
+            <th>Reservation Time</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var reservation in Model)
+        {
+            <tr>
+                <td>@reservation.Customer.Name</td>
+                <td>@reservation.Table.TableNumber</td>
+                <td>@reservation.ReservationTime.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@reservation.Status</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@reservation.Id" class="btn btn-info btn-sm">Details</a>
+                    <a asp-action="Edit" asp-route-id="@reservation.Id" class="btn btn-warning btn-sm">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@reservation.Id" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

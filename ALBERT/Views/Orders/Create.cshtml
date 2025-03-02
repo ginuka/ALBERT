@@ -1,0 +1,97 @@
+﻿@model ALBERT.ViewModels.CreateOrderDto
+@using Newtonsoft.Json
+@{
+    var menuItemsJson = JsonConvert.SerializeObject(ViewBag.MenuItems);
+}
+
+@{
+    ViewData["Title"] = "Create Order";
+}
+
+<h2>Create Order</h2>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label for="TableId">Table</label>
+        <select asp-for="TableId" class="form-control" asp-items="@(new SelectList(ViewBag.Tables, "Id", "TableNumber"))">
+            <option value="">Select Table</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="CustomerId">Customer</label>
+        <select asp-for="CustomerId" class="form-control" asp-items="@(new SelectList(ViewBag.Customers, "Id", "Name"))">
+            <option value="">Select Customer</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="WaiterId">Waiter</label>
+        <select asp-for="WaiterId" class="form-control" asp-items="@(new SelectList(ViewBag.Waiter, "Id", "Name"))">
+            <option value="">Select Waiter</option>
+        </select>
+    </div>
+
+    <h4>Order Items</h4>
+    <table class="table" id="orderItemsTable">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <button type="button" class="btn btn-info" id="addItem">Add Item</button>
+
+    <button type="submit" class="btn btn-primary">Create Order</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            let itemIndex = 0;
+
+            $('#TableId').change(function () {
+                var tableId = $(this).val();
+                if (tableId) {
+                    $.get(`/Reservations/GetCustomerByTable?tableId=${tableId}`, function (customer) {
+                        if (customer) {
+                            $('#CustomerId').val(customer.id);
+                        }
+                    });
+                }
+            });
+
+            $('#addItem').click(function () {
+                var menuItems = @Html.Raw(menuItemsJson);
+                var itemOptions = '<option value="">Select Item</option>';
+        menuItems.forEach(function (item) {
+            itemOptions += '<option value="' + item.Id + '">' + item.Name + '</option>';
+        });
+
+        var newRow = `<tr>
+            <td>
+                <select name="Items[${itemIndex}].MenuItemId" class="form-control">${itemOptions}</select>
+            </td>
+            <td>
+                <input type="number" name="Items[${itemIndex}].Quantity" class="form-control" min="1" value="1">
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger removeItem">Remove</button>
+            </td>
+        </tr>`;
+
+        $('#orderItemsTable tbody').append(newRow);
+        itemIndex++; // Increase index for next item
+            });
+
+            $(document).on('click', '.removeItem', function () {
+                $(this).closest('tr').remove();
+            });
+        });
+    </script>
+}

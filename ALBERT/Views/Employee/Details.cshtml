@@ -1,0 +1,32 @@
+﻿@model ALBERT.Models.Employee
+
+@{
+    ViewData["Title"] = "Employee Details";
+}
+
+<h2>Employee Details</h2>
+<table class="table">
+    <tr>
+        <th>Name</th>
+        <td>@Model.Name</td>
+    </tr>
+    <tr>
+        <th>Phone</th>
+        <td>@Model.Phone</td>
+    </tr>
+    <tr>
+        <th>Role</th>
+        <td>@Model.Role</td>
+    </tr>
+    <tr>
+        <th>Salary (LKR)</th>
+        <td>@Model.Salary.ToString("N2")</td>
+    </tr>
+    <tr>
+        <th>Hire Date</th>
+        <td>@Model.HireDate.ToShortDateString()</td>
+    </tr>
+</table>
+
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>

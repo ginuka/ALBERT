@@ -1,0 +1,28 @@
+﻿@model ALBERT.Models.Table
+
+@{
+    ViewData["Title"] = "Delete Table";
+}
+
+<h2>Are you sure you want to delete this table?</h2>
+
+<table class="table">
+    <tr>
+        <th>Table Number</th>
+        <td>@Model.TableNumber</td>
+    </tr>
+    <tr>
+        <th>Capacity</th>
+        <td>@Model.Capacity</td>
+    </tr>
+    <tr>
+        <th>Status</th>
+        <td>@Model.Status</td>
+    </tr>
+</table>
+
+<form asp-action="DeleteConfirmed" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

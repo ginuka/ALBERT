@@ -1,0 +1,29 @@
+﻿@model ALBERT.Models.Table
+
+@{
+    ViewData["Title"] = "Edit Table";
+}
+
+<h2>Edit Table</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="form-group">
+        <label>Table Number</label>
+        <input asp-for="TableNumber" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Capacity</label>
+        <input asp-for="Capacity" type="number" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Status</label>
+        <select asp-for="Status" asp-items="Html.GetEnumSelectList<ALBERT.Models.TableStatus>()" class="form-control"></select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

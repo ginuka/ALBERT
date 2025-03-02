@@ -1,0 +1,27 @@
+﻿@model ALBERT.Models.Table
+
+@{
+    ViewData["Title"] = "Create Table";
+}
+
+<h2>Create Table</h2>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label>Table Number</label>
+        <input asp-for="TableNumber" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Capacity</label>
+        <input asp-for="Capacity" type="number" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Status</label>
+        <select asp-for="Status" asp-items="Html.GetEnumSelectList<ALBERT.Models.TableStatus>()" class="form-control"></select>
+    </div>
+
+    <button type="submit" class="btn btn-success">Create</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

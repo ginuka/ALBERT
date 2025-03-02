@@ -1,0 +1,29 @@
+﻿@model ALBERT.Models.Reservation
+
+@{
+    ViewData["Title"] = "Reservation Details";
+}
+
+<h2>Reservation Details</h2>
+
+<table class="table">
+    <tr>
+        <th>Customer</th>
+        <td>@Model.Customer.Name</td>
+    </tr>
+    <tr>
+        <th>Table Number</th>
+        <td>@Model.Table.TableNumber</td>
+    </tr>
+    <tr>
+        <th>Reservation Time</th>
+        <td>@Model.ReservationTime.ToString("yyyy-MM-dd HH:mm")</td>
+    </tr>
+    <tr>
+        <th>Status</th>
+        <td>@Model.Status</td>
+    </tr>
+</table>
+
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>

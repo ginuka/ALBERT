@@ -1,0 +1,41 @@
+﻿@model ALBERT.Models.Reservation
+
+@{
+    ViewData["Title"] = "Edit Reservation";
+}
+
+<h2>Edit Reservation</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="form-group">
+        <label>Customer</label>
+        <input type="text" class="form-control" value="@Model.Customer.Name (@Model.Customer.Phone)" disabled />
+        <input type="hidden" asp-for="CustomerId" />
+    </div>
+
+    <div class="form-group">
+        <label>Table</label>
+        <select asp-for="TableId" class="form-control">
+            @foreach (var table in ViewBag.Tables)
+            {
+                <option value="@table.Id" selected="@(table.Id == Model.TableId)">Table @table.TableNumber (Capacity: @table.Capacity)</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Reservation Time</label>
+        <input asp-for="ReservationTime" type="datetime-local" class="form-control" />
+    </div>
+
+
+    <div class="form-group">
+        <label>Status</label>
+        <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<ReservationStatus>()"></select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

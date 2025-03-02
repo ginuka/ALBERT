@@ -1,0 +1,96 @@
+﻿@model ALBERT.Models.Order
+@using Newtonsoft.Json
+@{
+    var menuItemsJson = JsonConvert.SerializeObject(ViewBag.MenuItems);
+}
+@{
+    ViewData["Title"] = "Edit Order";
+}
+
+<h2>Edit Order</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="form-group">
+        <label>Table</label>
+        <input type="text" class="form-control" value="@ViewBag.TableNumber" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Customer</label>
+        <input type="text" class="form-control" value="@ViewBag.CustomerName" readonly />
+    </div>
+
+    <div class="form-group">
+        <label for="WaiterId">Waiter</label>
+        <select asp-for="WaiterId" class="form-control" asp-items="@(new SelectList(ViewBag.Waiters, "Id", "Name"))">
+            <option value="">Select Waiter</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="Status">Order Status</label>
+        <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<OrderStatus>()">
+        </select>
+    </div>
+
+    
+
+    <button type="submit" class="btn btn-primary">Update Order</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var menuItems = @Html.Raw(menuItemsJson);
+
+            $('#addItem').click(function () {
+                var itemOptions = '';
+                menuItems.forEach(function (item) {
+                    itemOptions += '<option value="' + item.Id + '">' + item.Name + '</option>';
+                });
+
+                var newRow = '<tr>' +
+                    '<td><select name="Items[][MenuItemId]" class="form-control">' + itemOptions + '</select></td>' +
+                    '<td><input type="number" name="Items[][Quantity]" class="form-control quantity" min="1" value="1"></td>' +
+                    '<td><input type="text" class="form-control subtotal" value="0.00" readonly></td>' +
+                    '<td><button type="button" class="btn btn-danger removeItem">Remove</button></td>' +
+                    '</tr>';
+
+                $('#orderItemsTable tbody').append(newRow);
+            });
+
+            $(document).on('click', '.removeItem', function () {
+                $(this).closest('tr').remove();
+                updateTotal();
+            });
+
+            $(document).on('change', 'select[name^="Items"]', function () {
+                updateSubtotal($(this).closest('tr'));
+            });
+
+            $(document).on('input', 'input[name^="Items"][name$="Quantity"]', function () {
+                updateSubtotal($(this).closest('tr'));
+            });
+
+            function updateSubtotal(row) {
+                var menuItemId = row.find('select[name^="Items"]').val();
+                var quantity = parseInt(row.find('input[name^="Items"][name$="Quantity"]').val()) || 1;
+                var menuItem = menuItems.find(m => m.Id == menuItemId);
+                var subtotal = menuItem ? (menuItem.Price * quantity).toFixed(2) : "0.00";
+                row.find('.subtotal').val(subtotal);
+                updateTotal();
+            }
+
+            function updateTotal() {
+                var total = 0;
+                $('.subtotal').each(function () {
+                    total += parseFloat($(this).val()) || 0;
+                });
+                $('#totalAmount').val(total.toFixed(2));
+            }
+        });
+    </script>
+}

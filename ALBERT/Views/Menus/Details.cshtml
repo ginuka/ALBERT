@@ -1,0 +1,35 @@
+﻿@model ALBERT.ViewModels.MenuDto
+
+<h2>@Model.Name - Details</h2>
+
+<h3>Menu Items</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Category</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (ViewBag.MenuItems != null)
+        {
+            foreach (var item in ViewBag.MenuItems)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>LKR @item.Price.ToString("N2")</td>
+                    <td>@item.Category</td>
+                    <td>@item.Description</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr><td colspan="4" class="text-center">No items found.</td></tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Index" class="btn btn-primary">Back to Menu List</a>

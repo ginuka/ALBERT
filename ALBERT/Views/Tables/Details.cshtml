@@ -1,0 +1,25 @@
+﻿@model ALBERT.Models.Table
+
+@{
+    ViewData["Title"] = "Table Details";
+}
+
+<h2>Table Details</h2>
+
+<table class="table">
+    <tr>
+        <th>Table Number</th>
+        <td>@Model.TableNumber</td>
+    </tr>
+    <tr>
+        <th>Capacity</th>
+        <td>@Model.Capacity</td>
+    </tr>
+    <tr>
+        <th>Status</th>
+        <td>@Model.Status</td>
+    </tr>
+</table>
+
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
