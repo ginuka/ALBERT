@@ -1,0 +1,129 @@
+﻿@model ALBERT.ViewModels.CreateOrderDto
+@using System.Text.Json
+
+<form id="createOrderForm" asp-action="Create" method="post">
+    <input type="hidden" name="TableId" value="@ViewBag.TableId" />
+
+    <div class="form-group">
+        <label>Customer</label>
+        <select name="CustomerId" class="form-control" asp-items="@(new SelectList(ViewBag.Customers, "Id", "Name"))">
+            <option value="">Select Customer</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Waiter</label>
+        <select name="WaiterId" class="form-control" asp-items="@(new SelectList(ViewBag.Waiters, "Id", "Name"))">
+            <option value="">Select Waiter</option>
+        </select>
+    </div>
+
+    <h4>Order Items</h4>
+    <table class="table" id="orderItemsTable">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <button type="button" class="btn btn-info" id="addItem">Add Item</button>
+
+    <div class="form-group mt-3">
+        <label>Total Amount</label>
+        <input type="text" id="totalAmount" class="form-control" readonly />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Place Order</button>
+</form>
+
+<script>
+        $(document).ready(function () {
+        var menuItems = @Html.Raw(JsonSerializer.Serialize(ViewBag.MenuItems));
+
+        function updateTotal() {
+            let total = 0;
+            $('#orderItemsTable tbody tr').each(function () {
+                let subtotal = parseFloat($(this).find('.subtotal').val()) || 0;
+                total += subtotal;
+            });
+            $('#totalAmount').val(total.toFixed(2)); // Update total amount field
+        }
+
+        $('#addItem').click(function () {
+            var index = $('#orderItemsTable tbody tr').length;
+            var itemOptions = menuItems.map(item => `<option value="${item.Id}" data-price="${item.Price}">${item.Name}</option>`).join('');
+
+            var newRow = `
+                <tr>
+                    <td>
+                        <select name="Items[${index}].MenuItemId" class="form-control item-select">${itemOptions}</select>
+                    </td>
+                    <td>
+                        <input type="number" name="Items[${index}].Quantity" class="form-control quantity" min="1" value="1">
+                    </td>
+                    <td>
+                        <input type="text" class="form-control subtotal" value="0.00" readonly>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger removeItem">Remove</button>
+                    </td>
+                </tr>`;
+
+            $('#orderItemsTable tbody').append(newRow);
+        });
+
+        // Calculate subtotal when quantity changes
+        $(document).on('change', '.quantity', function () {
+            let row = $(this).closest('tr');
+            let price = parseFloat(row.find('.item-select option:selected').data('price')) || 0;
+            let quantity = parseInt($(this).val()) || 1;
+            let subtotal = price * quantity;
+            row.find('.subtotal').val(subtotal.toFixed(2));
+
+            updateTotal();
+        });
+
+        // Calculate subtotal when item changes
+        $(document).on('change', '.item-select', function () {
+            let row = $(this).closest('tr');
+            let price = parseFloat($(this).find('option:selected').data('price')) || 0;
+            let quantity = parseInt(row.find('.quantity').val()) || 1;
+            let subtotal = price * quantity;
+            row.find('.subtotal').val(subtotal.toFixed(2));
+
+            updateTotal();
+        });
+
+        // Remove item and update total
+        $(document).on('click', '.removeItem', function () {
+            $(this).closest('tr').remove();
+            updateTotal();
+        });
+
+        // AJAX Submission for Saving the Order
+    $('#createOrderForm').submit(function (event) {
+        event.preventDefault();
+
+        let formData = $(this).serialize(); // Serialize form data
+
+        $.ajax({
+            url: '/Orders/Save',  // Change to your save endpoint
+            type: 'POST',
+            data: formData,
+            success: function (response) {
+                $('#orderPanel').html(response); // Load order details in the panel
+            },
+            error: function (xhr) {
+                alert('Error saving order: ' + xhr.responseText);
+            }
+        });
+    });
+    });
+
+</script>

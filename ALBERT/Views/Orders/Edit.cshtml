@@ -1,10 +1,9 @@
 ﻿@model ALBERT.Models.Order
 @using Newtonsoft.Json
-@{
-    var menuItemsJson = JsonConvert.SerializeObject(ViewBag.MenuItems);
-}
+
 @{
     ViewData["Title"] = "Edit Order";
+    var menuItemsJson = @Html.Raw(JsonConvert.SerializeObject(ViewBag.MenuItems ?? new List<object>()));
 }
 
 <h2>Edit Order</h2>
@@ -35,7 +34,47 @@
         </select>
     </div>
 
-    
+    <h4>Order Items</h4>
+    <table class="table" id="orderItemsTable">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Subtotal (LKR)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Items.Count; i++)
+            {
+                <tr>
+                    <td>
+                        <input type="hidden" name="Items[@i].Id" value="@Model.Items[i].Id" />
+                        <input type="hidden" name="Items[@i].OrderId" value="@Model.Id" />
+                        <select asp-for="Items[@i].MenuItemId" class="form-control"
+                                asp-items="@(new SelectList(ViewBag.MenuItems, "Id", "Name", Model.Items[i].MenuItemId))">
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" name="Items[@i].Quantity" class="form-control" min="1" value="@Model.Items[i].Quantity" />
+                    </td>
+                    <td>
+                        <input type="text" class="form-control subtotal" value="@Model.Items[i].Subtotal.ToString("N2")" readonly />
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger removeItem">Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="button" class="btn btn-info" id="addItem">Add Item</button>
+
+    <div class="form-group mt-3">
+        <label>Total Amount (LKR)</label>
+        <input type="text" id="totalAmount" class="form-control" value="@Model.TotalAmount.ToString("N2")" readonly />
+    </div>
 
     <button type="submit" class="btn btn-primary">Update Order</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
@@ -44,40 +83,16 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
-            var menuItems = @Html.Raw(menuItemsJson);
+            var menuItems = @menuItemsJson;
 
-            $('#addItem').click(function () {
-                var itemOptions = '';
-                menuItems.forEach(function (item) {
-                    itemOptions += '<option value="' + item.Id + '">' + item.Name + '</option>';
-                });
-
-                var newRow = '<tr>' +
-                    '<td><select name="Items[][MenuItemId]" class="form-control">' + itemOptions + '</select></td>' +
-                    '<td><input type="number" name="Items[][Quantity]" class="form-control quantity" min="1" value="1"></td>' +
-                    '<td><input type="text" class="form-control subtotal" value="0.00" readonly></td>' +
-                    '<td><button type="button" class="btn btn-danger removeItem">Remove</button></td>' +
-                    '</tr>';
-
-                $('#orderItemsTable tbody').append(newRow);
-            });
-
-            $(document).on('click', '.removeItem', function () {
-                $(this).closest('tr').remove();
-                updateTotal();
-            });
-
-            $(document).on('change', 'select[name^="Items"]', function () {
-                updateSubtotal($(this).closest('tr'));
-            });
-
-            $(document).on('input', 'input[name^="Items"][name$="Quantity"]', function () {
-                updateSubtotal($(this).closest('tr'));
-            });
+            if (!Array.isArray(menuItems) || menuItems.length === 0) {
+                console.error("Menu items data is missing or empty.");
+                menuItems = [];
+            }
 
             function updateSubtotal(row) {
-                var menuItemId = row.find('select[name^="Items"]').val();
-                var quantity = parseInt(row.find('input[name^="Items"][name$="Quantity"]').val()) || 1;
+                var menuItemId = row.find('.menu-item-dropdown').val();
+                var quantity = parseInt(row.find('.quantity').val()) || 1;
                 var menuItem = menuItems.find(m => m.Id == menuItemId);
                 var subtotal = menuItem ? (menuItem.Price * quantity).toFixed(2) : "0.00";
                 row.find('.subtotal').val(subtotal);
@@ -91,6 +106,49 @@
                 });
                 $('#totalAmount').val(total.toFixed(2));
             }
+
+                    $('#addItem').click(function () {
+            if (menuItems.length === 0) {
+                alert("No menu items available.");
+                return;
+            }
+
+            var index = $('#orderItemsTable tbody tr').length; // Get the correct index
+            var itemOptions = menuItems.map(item => `<option value="${item.Id}">${item.Name}</option>`).join('');
+
+            var newRow = `
+                <tr>
+                    <td>
+                        <input type="hidden" name="Items[${index}].Id" value="0" />
+                        <input type="hidden" name="Items[${index}].OrderId" value="@Model.Id" />
+                        <select name="Items[${index}].MenuItemId" class="form-control menu-item-dropdown">${itemOptions}</select>
+                    </td>
+                    <td>
+                        <input type="number" name="Items[${index}].Quantity" class="form-control quantity" min="1" value="1">
+                    </td>
+                    <td>
+                        <input type="text" class="form-control subtotal" value="0.00" readonly>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger removeItem">Remove</button>
+                    </td>
+                </tr>`;
+
+            $('#orderItemsTable tbody').append(newRow);
+        });
+
+            $(document).on('click', '.removeItem', function () {
+                $(this).closest('tr').remove();
+                updateTotal();
+            });
+
+            $(document).on('change', '.menu-item-dropdown', function () {
+                updateSubtotal($(this).closest('tr'));
+            });
+
+            $(document).on('input', '.quantity', function () {
+                updateSubtotal($(this).closest('tr'));
+            });
         });
     </script>
 }

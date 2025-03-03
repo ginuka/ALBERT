@@ -12,6 +12,26 @@ public class CustomerRepository
         _connectionString = connectionString;
     }
 
+    public string GetCustomerName(int customerId)
+    {
+        string customerName = null;
+
+        using (SqlConnection conn = new SqlConnection(_connectionString))
+        {
+            conn.Open();
+            string query = "SELECT Name FROM Customers WHERE Id = @CustomerId";
+
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@CustomerId", customerId);
+                var result = cmd.ExecuteScalar();
+                customerName = result?.ToString(); // Null check
+            }
+        }
+
+        return customerName ?? "Walk-in Customer"; // Default if not found
+    }
+
     public List<Customer> GetAllCustomers()
     {
         var customers = new List<Customer>();

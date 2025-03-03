@@ -159,5 +159,41 @@ namespace ALBERT.Repositories
             }
             return availableTables;
         }
+
+        public string GetTableNumber(int tableId)
+        {
+            string tableNumber = null;
+
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string query = "SELECT TableNumber FROM Tables WHERE Id = @TableId";
+
+                using (SqlCommand cmd = new SqlCommand(query, conn))
+                {
+                    cmd.Parameters.AddWithValue("@TableId", tableId);
+                    var result = cmd.ExecuteScalar();
+                    tableNumber = result?.ToString(); // Null check
+                }
+            }
+
+            return tableNumber ?? "Unknown Table"; // Default value if not found
+        }
+
+        internal void UpdateTableStatus(int tableId, TableStatus occupied)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = new SqlCommand(
+                    "UPDATE Tables SET Status = @Status WHERE Id = @Id", connection))
+                {
+                    command.Parameters.AddWithValue("@Id", tableId);
+                    command.Parameters.AddWithValue("@Status", occupied);
+
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
     }
 }

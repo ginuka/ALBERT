@@ -1,8 +1,50 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿<div class="container-fluid">
+    <div class="row">
+        <!-- Right Side: Table Board -->
+        <div class="col-md-6 d-flex flex-wrap">
+            @foreach (var table in Model)
+            {
+                string statusClass = table.Status switch
+                {
+                    TableStatus.Available => "available",
+                    TableStatus.Reserved => "reserved",
+                    TableStatus.Occupied => "occupied",
+                    TableStatus.NeedsCleaning => "needs-cleaning",
+                    _ => ""
+                };
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+                <div class="table-box @statusClass" data-id="@table.Id" data-status="@table.Status">
+                    Table @table.TableNumber
+                </div>
+            }
+        </div>
+
+        <!-- Left Side: Order Details -->
+        <div class="col-md-6" id="orderPanel">
+            <h3>Order Details</h3>
+            <div id="orderContent">Select a table to view or create an order.</div>
+        </div>
+    </div>
 </div>
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.table-box').click(function () {
+                let tableId = $(this).data('id');
+                let status = $(this).data('status');
+                let url = "";
+
+                if (status === "Available" || status === "Reserved") {
+                    url = "/Orders/CreateByTable?tableId=" + tableId;
+                } else if (status === "Occupied") {
+                    url = "/Orders/EditByTable?tableId=" + tableId;
+                }
+
+                if (url) {
+                    $("#orderContent").html("<p>Loading...</p>"); // Show loading message
+                    $("#orderContent").load(url); // Load the partial view via AJAX
+                }
+            });
+        });
+    </script>
+}

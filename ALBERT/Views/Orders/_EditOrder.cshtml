@@ -1,0 +1,145 @@
+﻿@model Order
+@using System.Text.Json
+
+<div class="d-flex justify-content-between align-items-center">
+    <h3>Edit Order for Table @ViewBag.TableNumber</h3>
+    <button type="button" class="btn btn-primary" id="addPaymentBtn">Add Payment</button>
+</div>
+
+<form id="editOrderForm" asp-action="EditOrder" asp-route-id="@Model.Id" method="post">
+    <div class="form-group">
+        <label>Customer</label>
+        <input type="text" class="form-control" value="@ViewBag.CustomerName" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Waiter</label>
+        <select name="WaiterId" class="form-control" asp-items="@(new SelectList(ViewBag.Waiters, "Id", "Name", Model.WaiterId))">
+            <option value="">Select Waiter</option>
+        </select>
+    </div>
+
+    <h4>Order Items</h4>
+    <table class="table" id="orderItemsTable">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (var i = 0; i < Model.Items.Count; i++)
+            {
+                var item = Model.Items[i];
+                <tr>
+                    <td>
+                        <input type="hidden" name="Items[@i].MenuItemId" value="@item.MenuItemId">
+                        @item.MenuItem.Name
+                    </td>
+                    <td>
+                        <input type="number" name="Items[@i].Quantity" class="form-control quantity" value="@item.Quantity" min="1">
+                    </td>
+                    <td>
+                        <input type="text" class="form-control subtotal" value="@item.Subtotal" readonly>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="button" class="btn btn-success mb-3" id="addItemBtn">Add Item</button>
+
+    <div class="form-group mt-3">
+        <label>Total Amount</label>
+        <input type="text" id="totalAmount" class="form-control" value="@Model.TotalAmount" readonly />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Update Order</button>
+</form>
+
+
+<script>
+    $(document).ready(function () {
+        var menuItems = @Html.Raw(JsonSerializer.Serialize(ViewBag.MenuItems));
+        var itemIndex = @Model.Items.Count; // Start index for new items
+
+        function calculateSubtotal(row) {
+            var quantity = $(row).find(".quantity").val();
+            var price = $(row).find(".menu-item option:selected").data("price") || 0;
+            var subtotal = quantity * price;
+            $(row).find(".subtotal").val(subtotal.toFixed(2));
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            var total = 0;
+            $(".subtotal").each(function () {
+                total += parseFloat($(this).val()) || 0;
+            });
+            $("#totalAmount").val(total.toFixed(2));
+        }
+
+        $("#addItemBtn").click(function () {
+            var newRow = `<tr>
+                <td>
+                    <select class="form-control menu-item" name="Items[${itemIndex}].MenuItemId">
+                        <option value="">Select Item</option>
+                        ${menuItems.map(item => `<option value="${item.Id}" data-price="${item.Price}">${item.Name}</option>`).join('')}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" name="Items[${itemIndex}].Quantity" class="form-control quantity" value="1" min="1">
+                </td>
+                <td>
+                    <input type="text" class="form-control subtotal" value="0" readonly>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-item">Remove</button>
+                </td>
+            </tr>`;
+            $("#orderItemsTable tbody").append(newRow);
+            itemIndex++;
+        });
+
+        $("#addPaymentBtn").click(function () {
+                var orderId = @Model.Id;
+                $.get("/Payment/AddPayment?orderId=" + orderId, function (data) {
+                    $("#orderPanel").html(data);
+                });
+            });
+
+        $(document).on("change", ".menu-item, .quantity", function () {
+            calculateSubtotal($(this).closest("tr"));
+        });
+
+        $(document).on("click", ".remove-item", function () {
+            $(this).closest("tr").remove();
+            calculateTotal();
+        });
+
+        $(document).ready(function () {
+            $("#editOrderForm").submit(function (e) {
+                e.preventDefault(); // Prevent default form submission
+
+                $.ajax({
+                    type: "POST",
+                    url: $(this).attr("action"),
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        $('#orderPanel').html(response); // Load order details in the panel
+                    },
+                    error: function () {
+                        alert("Error updating order!");
+                    }
+                });
+            });
+        });
+
+        calculateTotal();
+    });
+</script>

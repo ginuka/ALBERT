@@ -56,6 +56,8 @@ namespace ALBERT.Repositories
             return orders;
         }
 
+
+
         // 🔹 Get Order By Id (with items)
         public Order GetOrderById(int orderId)
         {
@@ -153,7 +155,7 @@ namespace ALBERT.Repositories
         }
 
         // 🔹 Create Order
-        public void CreateOrder(Order order)
+        public int CreateOrder(Order order)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
@@ -178,6 +180,8 @@ namespace ALBERT.Repositories
                     {
                         InsertOrderItem(orderId, item);
                     }
+
+                    return orderId;
                 }
             }
         }
@@ -203,22 +207,53 @@ namespace ALBERT.Repositories
             }
         }
 
-        // 🔹 Update Order
-        public void UpdateOrder(int orderId, Order order)
+        private void DeleteOrderItem(int orderId)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
-                string query = "UPDATE Orders SET Status = @Status, WaiterId = @WaiterId WHERE Id = @Id";
+                string deleteOrderItems = "DELETE FROM OrderItems WHERE OrderId = @OrderId";
+
+                connection.Open();
+
+                using (var transaction = connection.BeginTransaction())
+                {
+                    using (var command = new SqlCommand(deleteOrderItems, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@OrderId", orderId);
+                        command.ExecuteNonQuery();
+                    }
+
+                    transaction.Commit();
+                }
+            }
+        }
+
+        // 🔹 Update Order
+        public void UpdateOrder(int orderId, Order order)
+        {
+            DeleteOrderItem(orderId);
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                string query = "UPDATE Orders SET Status = @Status,TotalAmount =@TotalAmount, WaiterId = @WaiterId WHERE Id = @Id";
 
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@Id", orderId);
                     command.Parameters.AddWithValue("@Status", (int)order.Status);
+                    command.Parameters.AddWithValue("@TotalAmount", order.TotalAmount);
                     command.Parameters.AddWithValue("@WaiterId", order.WaiterId);
 
                     connection.Open();
                     command.ExecuteNonQuery();
+
+                    
                 }
+            }
+
+            foreach (var item in order.Items)
+            {
+
+                InsertOrderItem(orderId, item);
             }
         }
 
@@ -250,5 +285,61 @@ namespace ALBERT.Repositories
                 }
             }
         }
+
+        // 🔹 Get Order By TableId (Latest Active Order)
+        public Order GetOrderByTableId(int tableId)
+        {
+            Order order = null;
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                string query = @"
+        SELECT TOP 1 o.Id, o.TableId, o.CustomerId, o.TotalAmount, o.Status, o.OrderDate, o.WaiterId,
+                      t.TableNumber, c.Name AS CustomerName, e.Name AS WaiterName
+        FROM Orders o
+        JOIN Tables t ON o.TableId = t.Id
+        JOIN Customers c ON o.CustomerId = c.Id
+        JOIN Employees e ON o.WaiterId = e.Id
+        WHERE o.TableId = @TableId AND o.Status != @CompletedStatus
+        ORDER BY o.OrderDate DESC";  // Get the most recent active order
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@TableId", tableId);
+                    command.Parameters.AddWithValue("@CompletedStatus", (int)OrderStatus.Completed);  // Assuming 'Completed' is an enum
+
+                    connection.Open();
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            order = new Order
+                            {
+                                Id = reader.GetInt32(0),
+                                TableId = reader.GetInt32(1),
+                                CustomerId = reader.GetInt32(2),
+                                TotalAmount = reader.GetDecimal(3),
+                                Status = (OrderStatus)reader.GetInt32(4),
+                                OrderDate = reader.GetDateTime(5),
+                                WaiterId = reader.GetInt32(6),
+                                Table = new Table { Id = reader.GetInt32(1), TableNumber = reader.GetInt32(7) },
+                                Customer = new Customer { Id = reader.GetInt32(2), Name = reader.GetString(8) },
+                                Waiter = new Employee { Id = reader.GetInt32(6), Name = reader.GetString(9) }
+                            };
+                        }
+                    }
+                }
+            }
+
+            // Fetch Order Items if order exists
+            if (order != null)
+            {
+                order.Items = GetOrderItems(order.Id);
+            }
+
+            return order;
+        }
+
     }
 }
